@@ -12,13 +12,20 @@ select * from DimProduct
 SELECT
 	ProductKey,
 	ProductName,
-	CASE 
-		WHEN ClassName
+	CASE WHEN ClassName = 'Economy' THEN '5%' WHEN ClassName = 'Regular' THEN '7%' ELSE '9%' END AS 'Desconto',
+	CASE WHEN ClassName = 'Economy' THEN UnitPrice * 0.95 WHEN ClassName = 'Regular' THEN UnitPrice * 0.93 ELSE UnitPrice * 0.91 END AS 'Valor Final'
 FROM DimProduct
 --b) Faça uma adaptação no código para que os % de desconto de 5%, 7% e 9% sejam facilmente
 --modificados (dica: utilize variáveis).
-
-
+DECLARE @economy FLOAT = 0.95,
+		@regular FLOAT = 0.93,
+		@deluxe  FLOAT = 0.91
+SELECT
+	ProductKey,
+	ProductName,
+	CASE WHEN ClassName = 'Economy' THEN '5%' WHEN ClassName = 'Regular' THEN '7%' ELSE '9%' END AS 'Desconto',
+	CASE WHEN ClassName = 'Economy' THEN UnitPrice * @economy WHEN ClassName = 'Regular' THEN UnitPrice * @regular ELSE UnitPrice * @deluxe END AS 'Valor Final'
+FROM DimProduct
 
 
 --2. Você ficou responsável pelo controle de produtos da empresa e deverá fazer uma análise da
@@ -29,6 +36,16 @@ FROM DimProduct
 --CATEGORIA C: Menos de 100 produtos
 --Faça uma consulta à tabela DimProduct e retorne uma tabela com um agrupamento de Total de
 --Produtos por Marca, além da coluna de Categoria, conforme a regra acima.
+SELECT
+	BrandName,
+	COUNT(BrandName) AS 'Qtd. Produtos',
+	CASE WHEN COUNT(BrandName) >= 500 THEN 'CATEGORIA A'
+		 WHEN COUNT(BrandName) >= 100 THEN 'CATEGORIA B'
+		 ELSE 'CATEGORIA C'
+	END AS 'Categorias'
+FROM DimProduct
+GROUP BY BrandName
+
 
 --3. Será necessário criar uma categorização de cada loja da empresa considerando a quantidade de
 --funcionários de cada uma. A lógica a ser seguida será a lógica abaixo:
@@ -42,6 +59,17 @@ FROM DimProduct
 
 --Faça uma consulta à tabela DimStore que retorne as seguintes informações: StoreName,
 --EmployeeCount e a coluna de categoria, seguindo a regra acima.
+SELECT
+	StoreName,
+	EmployeeCount,
+	IIF(EmployeeCount >= 50,'Acima de 50 funcionários',
+	IIF(EmployeeCount >= 40, 'Entre 40 e 50 funcionários', 
+	IIF(EmployeeCount >= 30, 'Entre 30 e 40 funcionários',
+	IIF(EmployeeCount >= 20, 'Entre 20 e 30 funcionários',
+	IIF(EmployeeCount >= 10, 'Entre 10 e 20 funcionários','Abaixo de 10 funcionários'))))) as 'Qtd. Funcionários'
+FROM DimStore
+
+
 
 --4. O setor de logística deverá realizar um transporte de carga dos produtos que estão no depósito
 --de Seattle para o depósito de Sunnyside.
@@ -63,6 +91,13 @@ FROM DimProduct
 --multiplicar essa média por 100, de forma que você descubra aproximadamente qual é o peso total
 --dos produtos por subcategoria.
 --- Dica 3: Sua resposta final deverá ter um JOIN e um GROUP BY.
+SELECT
+	ProductSubcategoryName,
+	ROUND(AVG(dp.Weight) * 100, 2) as 'Peso Total',
+	IIF((AVG(dp.Weight) * 100) <= 1000, 'Rota 1','Rota 2') as 'Rota'
+FROM DimProduct dp
+INNER JOIN DimProductSubcategory dps on dp.ProductSubcategoryKey = dps.ProductSubcategoryKey
+GROUP BY ProductSubcategoryName
 
 --5. O setor de marketing está com algumas ideias de ações para alavancar as vendas em 2021. Uma
 --delas consiste em realizar sorteios entre os clientes da empresa.
@@ -78,10 +113,31 @@ FROM DimProduct
 --- EmailAdress AS ‘E-mail’
 --- Ação de Marketing: nessa coluna você deverá dividir os clientes de acordo com as categorias
 --‘Sorteio Mãe do Ano’, ‘Sorteio Pai do Ano’ e ‘Caminhão de Prêmios’.
+SELECT
+	FirstName AS 'Nome',
+	Gender AS 'Sexo',
+	TotalChildren AS 'Qtd. Filhos',
+	EmailAddress AS 'Email',
+	CASE
+		WHEN Gender = 'F' and TotalChildren > 0 THEN 'Sorteio Mãe do Ano'
+		WHEN Gender = 'M' and TotalChildren > 0 THEN 'Sorteio Pai do Ano'
+		ELSE 'Caminhão de Prêmios'
+	END AS 'Ação de Marketing'
+FROM DimCustomer
 
 --6. Descubra qual é a loja que possui o maior tempo de atividade (em dias). Você deverá fazer essa
 --consulta na tabela DimStore, e considerar a coluna OpenDate como referência para esse cálculo.
 --Atenção: lembre-se que existem lojas que foram fechadas.
+select * from DimStore
+
+
+
+
+
+
+
+
+
 
 -- [SQL Server] Funções Condicionais
 -- Aula 2 de 18: CASE WHEN... ELSE (Explicação)
@@ -327,5 +383,21 @@ FROM DimProduct
 -- Exemplo: Faça uma consulta que substitua todos os valores nulos de CityName da tabela DimGeography pelo texto 'Local desconhecido'.
 SELECT
 ISNULL(CityName,'Local desconhecido')
-
 FROM DimGeography
+
+SELECT * FROM DimGeography
+
+
+
+
+SELECT
+	IIF(2>1,'Sim','Não')
+
+
+
+SELECT
+	CASE WHEN 1>2 THEN 'SIM' ELSE 'NÃO' END;
+
+
+SELECT
+	IFNULL(
